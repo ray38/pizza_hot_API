@@ -1,0 +1,138 @@
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Store Frontend</title>
+</head>
+<body>
+    <textarea id="newsLog" cols="100" rows="20"></textarea><br>
+
+    <form id = "open-store-form">
+        <input type="checkbox" id="cheesePizzaBool" name="cheesePizaBool">
+        <label for="cheesePizzaBool"> we sell cheese pizza</label><br>
+
+        <input type="checkbox" id="sausagePizzaBool" name="cheesePizaBool">
+        <label for="sausagePizzaBool"> we sell sausage pizza</label><br>
+
+        <input type="number" id="cheeseAvailable" name="cheeseAvailable" value=0>
+        <label for="cheeseAvailable"> unit cheese available</label><br><br>
+
+        <input type="number" id="sausageAvailable" name="sausageAvailable" value=0>
+        <label for="sausageAvailable"> unit sausage available</label><br><br>
+
+        <input type="number" id="doughAvailable" name="doughAvailable" value=0>
+        <label for="doughAvailable"> unit dough available</label><br><br>
+
+        <input type="number" id="locationX" name="locationX" value=0>
+        <label for="locationX"> location X</label><br><br>
+
+        <input type="number" id="locationY" name="locationY" value=0>
+        <label for="locationY"> location Y</label><br><br>
+
+        <input type="button" id="storeOpenSubmit" value="Open Store">
+    </form>
+
+    <form id = "update-store-form">
+        
+
+        <input type="number" id="cheeseAddStock" name="cheeseAddStock" value=0>
+        <label for="cheeseAddStock"> add Cheese Stock</label><br><br>
+
+        <input type="number" id="sausageAddStock" name="sausageAddStock" value=0>
+        <label for="sausageAddStock"> add sausage stock</label><br><br>
+
+        <input type="number" id="doughAddStock" name="doughAddStock" value=0>
+        <label for="doughAddStock"> add dough stock</label><br><br>
+
+        <input type="button" id="updateInventorySubmit" value="Update Inventory">
+    </form>
+
+    <form id = "close-store-form">
+        <input type="button" id="storeCloseSubmit" value="Close Store">
+    </form>
+
+    <script>
+        const storeOpenForm = document.querySelector('#open-store-form');
+        const inventoryUpdateForm = document.querySelector('#update-store-form');
+        const storeCloseForm = document.querySelector('#close-store-form');
+        inventoryUpdateForm.style.display = 'none';
+        storeCloseForm.style.display = 'none';
+
+        const storeSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/store/'
+        );
+
+        storeSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log("got message", data)
+            document.querySelector('#newsLog').value += (data.message + '\n');
+        };
+
+        storeSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        // document.querySelector('#chat-message-input').focus();
+        // document.querySelector('#chat-message-input').onkeyup = function(e) {
+        //     if (e.keyCode === 13) {  // enter, return
+        //         document.querySelector('#chat-message-submit').click();
+        //     }
+        // };
+
+        document.querySelector('#storeOpenSubmit').onclick = function(e) {
+
+            storeSocket.send(JSON.stringify({
+                'type': "open",
+
+                'Location':{
+                    'X': parseFloat(document.querySelector('#locationX').value),
+                    'Y': parseFloat(document.querySelector('#locationY').value),
+                },
+                
+
+                'Menu':{'cheesePizza': document.querySelector('#cheesePizzaBool').value,
+                        'sausagePizza': document.querySelector('#sausagePizzaBool').value,
+                },
+                
+
+                'Inventory':{
+                    'cheese': parseFloat(document.querySelector('#cheeseAvailable').value),
+                    'sausage': parseFloat(document.querySelector('#sausageAvailable').value),
+                    'dough': parseFloat(document.querySelector('#doughAvailable').value),
+                }
+            }));
+            
+            storeOpenForm.style.display = 'none';
+            inventoryUpdateForm.style.display = '';
+            storeCloseForm.style.display = ''
+        };
+
+        document.querySelector('#updateInventorySubmit').onclick = function(e) {
+
+            storeSocket.send(JSON.stringify({
+                'type': "update",
+
+                'InventoryChange':{
+                    'cheese': parseFloat(document.querySelector('#cheeseAvailable').value),
+                    'sausage': parseFloat(document.querySelector('#sausageAvailable').value),
+                    'dough': parseFloat(document.querySelector('#doughAvailable').value),
+                }
+            }));
+        };
+
+        document.querySelector('#storeCloseSubmit').onclick = function(e) {
+
+            storeSocket.send(JSON.stringify({
+                'type': "close",
+            }));
+            
+            storeOpenForm.style.display = '';
+            inventoryUpdateForm.style.display = 'none';
+            storeCloseForm.style.display = 'none'
+        };
+    </script>
+</body>
+</html>
